@@ -99,7 +99,16 @@ export default tseslint.config(
             'import/resolver': {
                 typescript: {
                     alwaysTryTypes: true,
-                    project: './tsconfig.json'
+                    project: './tsconfig.json',
+                    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+                    paths: {
+                        "@main/*": ["./src/main/*"],
+                        "@/*": ["./src/*"]
+                    }
+                },
+                node: {
+                    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+                    paths: ["src"]
                 }
             }
         },
