@@ -92,6 +92,17 @@ export default tseslint.config(
         plugins: {
             import: importPlugin
         },
+        settings: {
+            'import/parsers': {
+                '@typescript-eslint/parser': ['.ts', '.tsx']
+            },
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: './tsconfig.json'
+                }
+            }
+        },
         rules: {
             'import/first': 'error',
             'import/no-duplicates': 'error',
@@ -287,6 +298,7 @@ import eslint from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
+import importPlugin from 'eslint-plugin-import' // NEU: Import Plugin hinzugefügt
 
 export default tseslint.config(
     // ===== ESLINT RULES =====
@@ -323,6 +335,44 @@ export default tseslint.config(
             'new-cap': 0,
             'one-var': 0,
             'guard-for-in': 0,
+        }
+    },
+
+    // ===== IMPORT PLUGIN ===== (NEU: Import Plugin Konfiguration)
+    {
+        plugins: {
+            import: importPlugin
+        },
+        settings: {
+            'import/parsers': {
+                '@typescript-eslint/parser': ['.ts', '.tsx']
+            },
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: './tsconfig.json'
+                }
+            }
+        },
+        rules: {
+            'import/first': 'error',
+            'import/no-duplicates': 'error',
+            'import/order': ['error', {
+                'groups': [
+                    'builtin',
+                    'external',
+                    'internal',
+                    'parent',
+                    'sibling',
+                    'index'
+                ],
+                'alphabetize': {
+                    'order': 'asc',
+                    'caseInsensitive': true
+                }
+            }],
+            'import/no-unresolved': 'error',
+            'import/no-cycle': 'error'
         }
     },
 
