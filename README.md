@@ -29,14 +29,34 @@ package.json:
 <details><summary>Click to expand..</summary>
 
 ```typescript
+/*
+███████████████████████████████████████████████████████████████████████████████
+██******************** PRESENTED BY t33n Software ***************************██
+██                                                                           ██
+██                  ████████╗██████╗ ██████╗ ███╗   ██╗                      ██
+██                  ╚══██╔══╝╚════██╗╚════██╗████╗  ██║                      ██
+██                     ██║    █████╔╝ █████╔╝██╔██╗ ██║                      ██
+██                     ██║    ╚═══██╗ ╚═══██╗██║╚██╗██║                      ██
+██                     ██║   ██████╔╝██████╔╝██║ ╚████║                      ██
+██                     ╚═╝   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝                      ██
+██                                                                           ██
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+*/
+
+// ==== Imports ====
 import eslint from '@eslint/js'
-import tseslint from 'typescript-eslint'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooksPlugin from 'eslint-plugin-react-hooks'
 import importPlugin from 'eslint-plugin-import'
 import a11yPlugin from 'eslint-plugin-jsx-a11y'
+import reactPlugin from 'eslint-plugin-react'
+import reactHooksPlugin from 'eslint-plugin-react-hooks'
+import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
+    {
+        // Global ignores for other directories, but not for eslint.config.mjs itself regarding naming conventions
+        ignores: ['eslint.config.mjs', 'coverage/**']
+    },
     // ===== ESLINT BASE RULES =====
     eslint.configs.recommended,
     
@@ -53,7 +73,7 @@ export default tseslint.config(
             'no-eval': 'error',
             'indent': ['error', 4],
             'quotes': ['error', 'single'],
-            'no-console': ["error", { allow: ["warn", "error", "info", "trace", ] }], // Stricter than original
+            'no-console': ['error', { allow: ['warn', 'error', 'info', 'trace' ] }], // Stricter than original
             'space-before-function-paren': ['error', 'never'],
             'padded-blocks': ['error', 'never'],
             'prefer-arrow-callback': ['error', { // Stricter than original
@@ -83,7 +103,8 @@ export default tseslint.config(
             'consistent-return': 'error',
             'curly': ['error', 'all'],
             'default-case': 'error',
-            'eqeqeq': ['error', 'always']
+            'eqeqeq': ['error', 'always'],
+            'dot-notation': 'off' // Disabled to allow bracket notation for private method testing
         }
     },
     
@@ -102,13 +123,13 @@ export default tseslint.config(
                     project: './tsconfig.json',
                     extensions: ['.ts', '.tsx', '.js', '.jsx'],
                     paths: {
-                        "@main/*": ["./src/main/*"],
-                        "@/*": ["./src/*"]
+                        '@main/*': ['./src/main/*'],
+                        '@/*': ['./src/*']
                     }
                 },
                 node: {
                     extensions: ['.ts', '.tsx', '.js', '.jsx'],
-                    paths: ["src"]
+                    paths: ['src']
                 }
             }
         },
@@ -209,7 +230,7 @@ export default tseslint.config(
                 /* 
                 - https://typescript-eslint.io/packages/parser/#tsconfigrootdir
                 The root directory for the tsconfig.json file (https://typescript-eslint.io/packages/parser/#tsconfigrootdir) */
-                tsconfigRootDir: import.meta.dirname,
+                tsconfigRootDir: import.meta.dirname
             }
         }
     },
@@ -221,6 +242,7 @@ export default tseslint.config(
             '@typescript-eslint/explicit-function-return-type': 'error',
             '@typescript-eslint/explicit-member-accessibility': 'error',
             '@typescript-eslint/member-ordering': 'error',
+            '@typescript-eslint/dot-notation': 'off', // Disabled to allow bracket notation for private method testing
             '@typescript-eslint/naming-convention': [
                 'error',
                 {
@@ -255,6 +277,15 @@ export default tseslint.config(
                     'selector': 'enum',
                     'format': ['PascalCase'],
                     'prefix': ['E']
+                },
+                // ANPASSUNG FÜR OBJEKT-PROPERTIES (wie _errors oder Zods required_error)
+                {
+                    'selector': ['objectLiteralProperty', 'typeProperty'], // Gilt für Properties in Objektliteralen und Typdefinitionen
+                    'format': ['camelCase', 'snake_case', 'PascalCase'], // Erlaube verschiedene Formate
+                    'leadingUnderscore': 'allow' // WICHTIG: Erlaube hier führende Unterstriche
+                // Optional: Wenn du es *nur* für spezifische Namen wie '_errors' erlauben willst:
+                // 'filter': { 'regex': '^_errors$', 'match': true }
+                // Aber 'allow' ist oft einfacher, wenn mehrere solcher Fälle von externen Bibliotheken kommen.
                 }
             ],
             '@typescript-eslint/no-explicit-any': 'error',
