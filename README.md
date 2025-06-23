@@ -29,21 +29,6 @@ package.json:
 <details><summary>Click to expand..</summary>
 
 ```typescript
-/*
-███████████████████████████████████████████████████████████████████████████████
-██******************** PRESENTED BY t33n Software ***************************██
-██                                                                           ██
-██                  ████████╗██████╗ ██████╗ ███╗   ██╗                      ██
-██                  ╚══██╔══╝╚════██╗╚════██╗████╗  ██║                      ██
-██                     ██║    █████╔╝ █████╔╝██╔██╗ ██║                      ██
-██                     ██║    ╚═══██╗ ╚═══██╗██║╚██╗██║                      ██
-██                     ██║   ██████╔╝██████╔╝██║ ╚████║                      ██
-██                     ╚═╝   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝                      ██
-██                                                                           ██
-███████████████████████████████████████████████████████████████████████████████
-███████████████████████████████████████████████████████████████████████████████
-*/
-
 // ==== Imports ====
 import eslint from '@eslint/js'
 import importPlugin from 'eslint-plugin-import'
@@ -303,7 +288,8 @@ export default tseslint.config(
             '@typescript-eslint/no-floating-promises': 'error',
             '@typescript-eslint/promise-function-async': 'error',
             '@typescript-eslint/prefer-enum-initializers': 'error',
-            '@typescript-eslint/prefer-literal-enum-member': 'error'
+            '@typescript-eslint/prefer-literal-enum-member': 'error',
+            '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off'
         }
     }
 )
