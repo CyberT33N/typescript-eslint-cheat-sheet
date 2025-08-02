@@ -232,10 +232,10 @@ export default tseslint.config(
                 'code': 80,
                 'tabWidth': 4,
                 'ignoreUrls': true,
-                'ignoreStrings': true,
-                'ignoreTemplateLiterals': true,
+                'ignoreStrings': false,
+                'ignoreTemplateLiterals': false,
                 'ignoreRegExpLiterals': true,
-                'ignoreComments': false
+                'ignoreComments': true
             }],
             '@stylistic/max-statements-per-line': ['error', { 'max': 1 }],
             '@stylistic/newline-per-chained-call': ['error', { 'ignoreChainWithDepth': 2 }],
