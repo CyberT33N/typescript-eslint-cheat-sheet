@@ -229,7 +229,7 @@ export default tseslint.config(
             
             // ===== LINE BREAKS & WRAPPING =====
             '@stylistic/max-len': ['error', {
-                'code': 80,
+                'code': 120,
                 'tabWidth': 4,
                 'ignoreUrls': true,
                 'ignoreStrings': false,
