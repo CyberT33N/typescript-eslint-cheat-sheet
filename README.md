@@ -695,7 +695,88 @@ export default tseslint.config(
             '@typescript-eslint/no-floating-promises': 'error',
             '@typescript-eslint/promise-function-async': 'error',
             '@typescript-eslint/prefer-enum-initializers': 'error',
-            '@typescript-eslint/prefer-literal-enum-member': 'error'
+            '@typescript-eslint/prefer-literal-enum-member': 'error',
+            
+            // ===== ENTERPRISE-GRADE ZUSÄTZLICHE REGELN =====
+            // Type Safety Enhancement
+            '@typescript-eslint/no-unsafe-type-assertion': 'error', // Verhindert unsichere Type Assertions
+            '@typescript-eslint/no-unnecessary-type-conversion': 'error', // Verhindert unnötige Type Conversions
+            '@typescript-eslint/consistent-return': 'error', // Erzwingt konsistente Return Types
+            '@typescript-eslint/no-unnecessary-parameter-property-assignment': 'error', // Verhindert redundante Zuweisungen
+            
+            // Import/Export Hygiene (Google/Microsoft Standards)
+            '@typescript-eslint/no-import-type-side-effects': 'error', // Performance: Verhindert Side Effects bei Type Imports
+            '@typescript-eslint/consistent-type-exports': 'error', // Konsistente Type Exports
+            '@typescript-eslint/no-useless-empty-export': 'error', // Verhindert leere Exports
+            
+            // Code Quality & Maintainability
+            '@typescript-eslint/no-unnecessary-qualifier': 'error', // Entfernt unnötige Namespace Qualifier
+            '@typescript-eslint/prefer-destructuring': ['error', { // Erzwingt Destructuring (moderne Syntax)
+                'array': true,
+                'object': true
+            }],
+            '@typescript-eslint/parameter-properties': ['error', { // Explizite Parameter Properties
+                'prefer': 'parameter-property'
+            }],
+            
+            // Restricted Types (Security & Type Safety)
+            '@typescript-eslint/no-restricted-types': ['error', {
+                'types': {
+                    'Object': {
+                        'message': 'Use Record<string, unknown> or a specific interface instead',
+                        'fixWith': 'Record<string, unknown>'
+                    },
+                    'Function': {
+                        'message': 'Use a specific function type instead',
+                        'suggest': ['() => void', '(...args: unknown[]) => unknown']
+                    },
+                    '{}': {
+                        'message': 'Use Record<string, never> for empty object, unknown for any value, or a specific interface',
+                        'fixWith': 'Record<string, never>'
+                    }
+                }
+            }],
+            
+            // Method Signature Enforcement
+            '@typescript-eslint/method-signature-style': ['error', 'property'], // Konsistente Method Signatures
+            
+            // Class Design (Enterprise OOP Standards)
+            '@typescript-eslint/class-methods-use-this': ['error', { // Statische Methoden wenn kein "this"
+                'exceptMethods': ['render', 'componentDidMount', 'componentDidUpdate', 'componentWillUnmount'],
+                'enforceForClassFields': true
+            }],
+            
+            // Async/Promise Best Practices
+            '@typescript-eslint/return-await': ['error', 'always'], // Explizites await für besseres Stack Tracing
+            '@typescript-eslint/no-misused-promises': ['error', {
+                'checksVoidReturn': {
+                    'arguments': true,
+                    'attributes': true,
+                    'properties': true,
+                    'returns': true,
+                    'variables': true
+                },
+                'checksConditionals': true,
+                'checksSpreads': true
+            }],
+            
+            // Enhanced Type Checking für Edge Cases
+            '@typescript-eslint/no-confusing-void-expression': ['error', {
+                'ignoreArrowShorthand': false,
+                'ignoreVoidOperator': false
+            }],
+            
+            // Type Annotation Requirements (für kritische Bereiche)
+            '@typescript-eslint/typedef': ['error', {
+                'arrayDestructuring': false,
+                'arrowParameter': false,
+                'memberVariableDeclaration': true, // Klassen-Member müssen typisiert sein
+                'objectDestructuring': false,
+                'parameter': true, // Funktionsparameter müssen typisiert sein
+                'propertyDeclaration': true, // Properties müssen typisiert sein
+                'variableDeclaration': false, // Kann durch Type Inference abgeleitet werden
+                'variableDeclarationIgnoreFunction': true
+            }]
         }
     }
 )
