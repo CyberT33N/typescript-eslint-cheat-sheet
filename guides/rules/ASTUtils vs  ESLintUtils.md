@@ -1,50 +1,147 @@
-### What lives where
+### Agent Policy: Custom ESLint Rule Authoring (ASTUtils vs ESLintUtils)
 
-- ASTUtils (AST-level helpers)
-  - Token and trivia helpers: e.g., `ASTUtils.isOpeningParenToken`, `ASTUtils.isClosingParenToken` (as used in your rule).
-  - Pattern/lexeme helpers: `PatternMatcher`, `predicates`.
-  - Scope and reference analysis: `ReferenceTracker`, `scopeAnalysis`.
-  - General AST helpers: `helpers`, `misc`, `predicates`.
-  - When to use: Navigating/manipulating AST, matching patterns, tracking references, token/whitespace decisions.
+- **Authoritative decision**: Always scaffold rules with `ESLintUtils.RuleCreator`. Use `ASTUtils` for AST/token/scope utilities. Use `ESLintUtils.getParserServices` when TypeScript type info is required.
 
-- ESLintUtils (rule scaffolding + TS integration)
-  - Rule creation and typing: `ESLintUtils.RuleCreator` (typed messages/options, docs URL builder).
-  - Type services access: `ESLintUtils.getParserServices` (safe, typed access to `program`, `esTreeNodeToTSNodeMap`).
-  - Utilities: `applyDefault`, `deepMerge`, `nullThrows`, `parserSeemsToBeTSESLint`, `InferTypesFromRule`.
-  - When to use: Creating rules with strict typing, integrating TypeScript type info, safe parser checks, robust rule DX.
+### When to use ASTUtils
 
-- Types you’ll also use
-  - `TSESLint` (rule types, `RuleContext`, `RuleFixer`, `SourceCode`, etc.)
-  - `TSESTree` (AST node types)
-  - `JSONSchema` (for `meta.schema` typing, if desired)
+- **Token helpers**: `ASTUtils.isOpeningParenToken`, `ASTUtils.isClosingParenToken` for precise token classification.
+- **Pattern/lexeme helpers**: `ast-utils/predicates`, `PatternMatcher` for matching identifiers, literals, and shapes.
+- **Reference/scope analysis**: `ReferenceTracker`, `scopeAnalysis` to find global or module-level symbol usage and bindings.
+- **AST helpers**: `ast-utils/helpers`, `misc` for safe node/token navigation.
+- **Formatting/whitespace rules**: Prefer AST/token utilities for reliable fixes instead of ad-hoc string ops.
 
-- - - 
+### When to use ESLintUtils
 
-### Best-practice: Which to use for what
+- **Rule scaffolding (MUST)**: `ESLintUtils.RuleCreator` for typed messages/options and a canonical docs URL.
+- **Type services (MUST for type-aware rules)**: `ESLintUtils.getParserServices(context)` to safely access `program`, `esTreeNodeToTSNodeMap`; do not read `context.parserServices` directly.
+- **Utilities**: `nullThrows` (defensive checks), `applyDefault`/`deepMerge` (options), `parserSeemsToBeTSESLint` (guardrails), `InferTypesFromRule` (type inference support).
 
-- MUST use `ESLintUtils.RuleCreator` to define rules (typed `Options`/`MessageIds`, easy docs URL, consistent metadata).
-- MUST use `ESLintUtils.getParserServices(context)` for type-aware rules instead of directly reading `context.parserServices`.
-- MUST use `ASTUtils` for AST/token-level operations (token classification, reference tracking, pattern matching) and whitespace/format rules.
-- SHOULD type rule interfaces with `TSESLint.RuleContext<MessageIds, Options>` and node types with `TSESTree`.
-- SHOULD keep visitors narrow and bail out early for performance (selectors, quick guards, compute tokens once).
-- SHOULD avoid calling expensive TS APIs in hot loops; cache `typeChecker` from `getParserServices` once.
-- SHOULD provide a `RuleCreator` docs URL to link rule docs in diagnostics.
-- MUST NOT reimplement parser-service access or AST utilities provided by the utils package.
-- MUST NOT access `context.parserServices` without validating TS parser (use `getParserServices` which asserts and throws with a clear message).
+### Rule authoring standard (MUST/SHOULD)
 
-- - - 
+- **MUST** use `ESLintUtils.RuleCreator` and provide a stable docs URL.
+- **MUST** type `MessageIds` and `Options`; use `TSESTree` for nodes and `TSESLint` for rule types.
+- **MUST** use `getParserServices` for any TS type-checker access; fetch checker once, avoid hot-loop TS calls.
+- **SHOULD** bail early with cheap guards; compute tokens once; keep selectors narrow.
+- **SHOULD** define `meta.schema` precisely; keep fixes idempotent and minimal.
+- **MUST NOT** access `context.parserServices` directly or re-implement helpers already in utils.
+- **MUST** export rules and plugins via named exports only.
 
-### Quick decision matrix
+### Before vs After (Best Practice migration)
 
-- Pure AST/format/whitespace rule (no TS types needed): ESLintUtils.RuleCreator for scaffolding + ASTUtils for AST.
-- Type-aware rule (needs TS checker/types): ESLintUtils.RuleCreator + ESLintUtils.getParserServices + ASTUtils as needed.
-- Cross-scope or global reference tracking: Use `ASTUtils.ReferenceTracker` and `scopeAnalysis`.
+- Before (manual rule module)
 
-- - - 
+```ts
+import { ASTUtils } from '@typescript-eslint/utils'
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils'
 
-### Summary (what the agent MUST do)
+type MessageIds = 'expectedAfter' | 'expectedBefore'
+type Options = [{ minParams?: number }?]
 
-- Use `ESLintUtils.RuleCreator` to define every rule.
-- Use `ESLintUtils.getParserServices(context)` whenever TypeScript type info is required.
-- Use `ASTUtils` for AST/token operations, reference tracking, and pattern utilities.
-- Type everything with `TSESLint`/`TSESTree`; keep visitors narrow; avoid hot-loop type checks.
+const rule: TSESLint.RuleModule<MessageIds, Options> = {
+  create(context) {
+    const { sourceCode, options } = context
+    const [option] = options
+    const minParameters = typeof option?.minParams === 'number' && option.minParams > 0 ? option.minParams : 2
+
+    return {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+        const opening = sourceCode.getTokenBefore(node.params[0], ASTUtils.isOpeningParenToken)
+        const closing = sourceCode.getTokenAfter(node.params[node.params.length - 1], ASTUtils.isClosingParenToken)
+        // enforce newlines via token checks...
+      }
+    }
+  },
+  meta: { /* docs, messages, schema, fixable, type */ },
+  defaultOptions: [{ minParams: 2 }]
+}
+
+export const functionDefinitionParenNewlinePlugin: TSESLint.FlatConfig.Plugin = {
+  rules: { 'function-definition-paren-newline': rule }
+}
+```
+
+- After (Best Practice with RuleCreator)
+
+```ts
+import { ASTUtils, ESLintUtils } from '@typescript-eslint/utils'
+import type { TSESLint, TSESTree } from '@typescript-eslint/utils'
+
+type MessageIds = 'expectedAfter' | 'expectedBefore'
+type Options = [{ minParams?: number }?]
+
+const createRule = ESLintUtils.RuleCreator(
+  name => `https://docs.t33n.software/eslint-rules/${name}`
+)
+
+const rule = createRule<Options, MessageIds>({
+  name: 'function-definition-paren-newline',
+  meta: {
+    type: 'layout',
+    docs: { description: 'Enforce newlines just inside parentheses for function/method definitions only (not calls), when the number of parameters is ≥ minParams' },
+    fixable: 'whitespace',
+    messages: {
+      expectedAfter: "Expected newline after '(' in function definition",
+      expectedBefore: "Expected newline before ')' in function definition"
+    },
+    schema: [{ type: 'object', additionalProperties: false, properties: { minParams: { type: 'integer', minimum: 1 } } }]
+  },
+  defaultOptions: [{ minParams: 2 }],
+  create(context) {
+    const { sourceCode, options } = context
+    const [option] = options
+    const minParameters = typeof option?.minParams === 'number' && option.minParams > 0 ? option.minParams : 2
+
+    return {
+      FunctionDeclaration(node: TSESTree.FunctionDeclaration) {
+        if (node.params.length < minParameters) return
+
+        const first = node.params[0]
+        const last = node.params[node.params.length - 1]
+        const opening = sourceCode.getTokenBefore(first, ASTUtils.isOpeningParenToken)
+        const closing = sourceCode.getTokenAfter(last, ASTUtils.isClosingParenToken)
+        if (!opening || !closing) return
+
+        const tokenAfterOpen = sourceCode.getTokenAfter(opening, { includeComments: true })
+        const tokenBeforeClose = sourceCode.getTokenBefore(closing, { includeComments: true })
+        if (!tokenAfterOpen || !tokenBeforeClose) return
+
+        if (opening.loc.end.line === tokenAfterOpen.loc.start.line) {
+          context.report({
+            node,
+            loc: opening.loc,
+            messageId: 'expectedAfter',
+            fix: fixer => fixer.insertTextAfter(opening, '\n')
+          })
+        }
+        if (tokenBeforeClose.loc.end.line === closing.loc.start.line) {
+          context.report({
+            node,
+            loc: closing.loc,
+            messageId: 'expectedBefore',
+            fix: fixer => fixer.insertTextBefore(closing, '\n')
+          })
+        }
+      }
+    }
+  }
+})
+
+export const functionDefinitionParenNewlinePlugin: TSESLint.FlatConfig.Plugin = {
+  rules: { 'function-definition-paren-newline': rule }
+}
+```
+
+### Optional: adding TS type-awareness
+
+- When a rule must reason about TS types:
+  - Use `const services = ESLintUtils.getParserServices(context)` and then `const checker = services.program.getTypeChecker()`.
+  - Map nodes via `services.esTreeNodeToTSNodeMap.get(esNode)`.
+
+### Checklist (agent MUST follow)
+
+- Use `ESLintUtils.RuleCreator` with a valid docs URL.
+- Use `ASTUtils` for tokens/patterns/reference tracking; do not reimplement.
+- Use `ESLintUtils.getParserServices` for any type-aware logic.
+- Strongly type `MessageIds`, `Options`, `meta.schema`.
+- Keep visitors minimal, bail out early, avoid hot-loop type-checker calls.
+- Export rules/plugins via named exports only.
